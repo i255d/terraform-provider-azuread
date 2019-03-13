@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/ar"
 )
 
 func TestAccAzureADGroupOwner_complete(t *testing.T) {
@@ -55,17 +54,35 @@ func testCheckAzureADGroupOwnerDestroy(s *terraform.State) error {
 
 		client := testAccProvider.Meta().(*ArmClient).groupsClient
 		ctx := testAccProvider.Meta().(*ArmClient).StopContext
-		resp, err := client.Get(ctx, rs.Primary.ID)
 
+		groupID := rs.Primary.Attributes["group_object_id"]
+		ownerID := rs.Primary.Attributes["owner_object_id"]
+
+		owners, err := client.ListOwnersComplete(ctx, groupID)
 		if err != nil {
-			if ar.ResponseWasNotFound(resp.Response) {
-				return nil
-			}
-
-			return err
+			return fmt.Errorf("Error retrieving Azure AD Group owners (groupObjectId: %q): %+v", groupID, err)
 		}
 
-		return fmt.Errorf("Azure AD group owner still exists:\n%#v", resp)
+		var ownerObjectID string
+		for owners.NotDone() {
+
+			user, _ := owners.Value().AsUser()
+			if user != nil {
+				if *user.ObjectID == ownerID {
+					ownerObjectID = *user.ObjectID
+					break
+				}
+			}
+
+			err = owners.NextWithContext(ctx)
+			if err != nil {
+				return fmt.Errorf("Error listing Azure AD Group Owners: %s", err)
+			}
+		}
+
+		if ownerObjectID != "" {
+			return fmt.Errorf("Azure AD group owner still exists:\n%#v", ownerObjectID)
+		}
 	}
 
 	return nil

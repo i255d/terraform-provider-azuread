@@ -79,12 +79,12 @@ func resourceGroupOwnerRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error retrieving Azure AD Group owners (groupObjectId: %q): %+v", groupID, err)
 	}
 
-	var ownerDirectoryObject *graphrbac.User
+	var ownerObjectID string
 	for owners.NotDone() {
-		directoryObject, _ := owners.Value().AsUser()
-		if directoryObject != nil {
-			if *directoryObject.ObjectID == ownerID {
-				ownerDirectoryObject = directoryObject
+		user, _ := owners.Value().AsUser()
+		if user != nil {
+			if *user.ObjectID == ownerID {
+				ownerObjectID = *user.ObjectID
 				break
 			}
 		}
@@ -95,14 +95,14 @@ func resourceGroupOwnerRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if ownerDirectoryObject == nil {
+	if ownerObjectID == "" {
 		log.Printf("[DEBUG] Azure AD Group Owner was not found (groupObjectId:%q / ownerObjectId:%q ) - removing from state!", groupID, ownerID)
 		d.SetId("")
 		return fmt.Errorf("Azure AD Group Owner not found - groupObjectId:%q / ownerObjectId:%q", groupID, ownerID)
 	}
 
 	d.Set("group_object_id", groupID)
-	d.Set("owner_object_id", ownerDirectoryObject.ObjectID)
+	d.Set("owner_object_id", ownerObjectID)
 
 	return nil
 }
