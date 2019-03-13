@@ -35,7 +35,6 @@ The following arguments are supported:
 * `group_object_id` - (Required) The object id of the Azure AD Group where the Owner should be added.
 * `owner_object_id` - (Required) The object id of the Azure AD User you want to add as Owner.
 
-
 ## Attributes Reference
 
 The following attributes are exported:
