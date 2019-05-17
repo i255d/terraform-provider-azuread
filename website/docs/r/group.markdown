@@ -15,9 +15,30 @@ Manages a Group within Azure Active Directory.
 
 ## Example Usage
 
+### Creating a Group
+
 ```hcl
 resource "azuread_group" "my_group" {
   name = "MyGroup"
+}
+```
+
+### Creating a Group with Owners
+
+```hcl
+data "azuread_domains" "tenant_domain" {
+  only_initial = true
+}
+
+resource "azuread_user" "test_user" {
+  user_principal_name   = "my_user@${data.azuread_domains.tenant_domain.domains.0.domain_name}"
+  display_name          = "my_user"
+  password              = "my&P@ssw0Rd"
+}
+
+resource "azuread_group" "my_group_with_owners" {
+  name    = "MyGroup"
+  owners  = ["${azuread_user.test_user.id}"]
 }
 ```
 
@@ -25,9 +46,13 @@ resource "azuread_group" "my_group" {
 
 The following arguments are supported:
 
-* `name` - (Required) The display name for the Group.
+* `name` - (Required) The display name for the Group. Changing this forces a new resource to be created.
 
 -> **NOTE:** Group names are not unique within Azure Active Directory.
+
+* `owners` - (Optional) A list of User Object IDs which should be owner of this Group.
+
+-> **NOTE:** Once set, Azure requires at least one Group Owner. Therefore it may be required to delete the Group manually.
 
 ## Attributes Reference
 
@@ -36,6 +61,8 @@ The following attributes are exported:
 * `id` - The Object ID of the Group.
 
 * `name` - The Display Name of the Group.
+
+* `owners` - A list of Object IDs which represent the Group owners.
 
 ## Import
 
