@@ -66,7 +66,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(*group.ObjectID)
 
 	owners := d.Get("owners").([]interface{})
-	ownersExpanded, err := expandGroupOwners(owners, tenantID)
+	ownersExpanded, err := expandGroupOwners(owners)
 	if err != nil {
 		return fmt.Errorf("Error expanding `owners`: %+v", owners)
 	}
@@ -127,7 +127,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("owners") {
 
 		owners := d.Get("owners").([]interface{})
-		ownersExpanded, err := expandGroupOwners(owners, tenantID)
+		ownersExpanded, err := expandGroupOwners(owners)
 		if err != nil {
 			return fmt.Errorf("Error expanding `owners`: %+v", owners)
 		}
@@ -146,7 +146,7 @@ func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 
-		//first we loop through all expanded owners and add them if necessary. We do the add/remove in seperate loops as
+		//first we loop through all expanded owners and add them if necessary. We do the add/remove in separate loops as
 		//we want to prevent that we're removing the last owner from the group which will cause an error in the Azure API.
 		if ownersExpanded != nil {
 			for _, expandedOwner := range *ownersExpanded {
@@ -217,7 +217,7 @@ func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func expandGroupOwners(input []interface{}, tenantID string) (*[]string, error) {
+func expandGroupOwners(input []interface{}) (*[]string, error) {
 	output := make([]string, 0)
 
 	for _, owner := range input {
