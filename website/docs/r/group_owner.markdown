@@ -32,8 +32,8 @@ resource "azuread_group_owner" "default_owner" {
 
 The following arguments are supported:
 
-* `group_object_id` - (Required) The object id of the Azure AD Group where the Owner should be added.
-* `owner_object_id` - (Required) The object id of the Azure AD User you want to add as Owner.
+* `group_object_id` - (Required) The object id of the Azure AD Group where the Owner should be added. Changing this forces a new resource to be created.
+* `owner_object_id` - (Required) The object id of the Azure AD User you want to add as Owner. Changing this forces a new resource to be created.
 
 ## Attributes Reference
 

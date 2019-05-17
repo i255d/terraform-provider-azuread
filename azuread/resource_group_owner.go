@@ -51,8 +51,7 @@ func resourceGroupOwnerCreate(d *schema.ResourceData, meta interface{}) error {
 		URL: &ownerGraphURL,
 	}
 
-	_, err := client.AddOwner(ctx, groupID, properties)
-	if err != nil {
+	if _, err := client.AddOwner(ctx, groupID, properties); err != nil {
 		return err
 	}
 
@@ -89,8 +88,7 @@ func resourceGroupOwnerRead(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 
-		err = owners.NextWithContext(ctx)
-		if err != nil {
+		if err := owners.NextWithContext(ctx); err != nil {
 			return fmt.Errorf("Error listing Azure AD Group Owners: %s", err)
 		}
 	}
