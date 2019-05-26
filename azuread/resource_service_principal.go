@@ -69,6 +69,7 @@ func resourceServicePrincipalCreate(d *schema.ResourceData, meta interface{}) er
 		properties.Tags = tf.ExpandStringArrayPtr(v.(*schema.Set).List())
 	}
 
+	// todo require resources to be imported
 	sp, err := client.Create(ctx, properties)
 	if err != nil {
 		return fmt.Errorf("Error creating Service Principal for application  %q: %+v", applicationId, err)

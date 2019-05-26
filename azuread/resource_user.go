@@ -97,6 +97,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 		UserPrincipalName: &userPrincipalName,
 	}
 
+	// todo require resources to be imported
 	user, err := client.Create(ctx, userCreateParameters)
 	if err != nil {
 		return fmt.Errorf("Error creating User %q: %+v", userPrincipalName, err)
@@ -110,7 +111,7 @@ func resourceUserCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if resp.ObjectID == nil {
-		return fmt.Errorf("User objectId is nil")
+		return fmt.Errorf("objectID is nil for user %s", userPrincipalName)
 	}
 
 	d.SetId(*resp.ObjectID)

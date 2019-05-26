@@ -10,6 +10,7 @@ import (
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/ar"
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/guid"
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/p"
+	`github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/tf`
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/validate"
 )
 
@@ -30,9 +31,12 @@ func resourceGroup() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 			},
+
 			"owners": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
+				Set:      schema.HashString,
 				Optional: true,
+				Computed: true,
 				MinItems: 1,
 				MaxItems: 100, //Group owners are maxed out at 100
 				Elem: &schema.Schema{
@@ -51,46 +55,42 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	name := d.Get("name").(string)
 	tenantID := client.TenantID
 
+	// first create group
 	properties := graphrbac.GroupCreateParameters{
 		DisplayName:     &name,
-		MailEnabled:     p.Bool(false),                 //we're defaulting to false, as the API currently only supports the creation of non-mail enabled security groups.
+		MailEnabled:     p.Bool(false),           //we're defaulting to false, as the API currently only supports the creation of non-mail enabled security groups.
 		MailNickname:    p.String(guid.New().String()), //this matches the portal behavior
-		SecurityEnabled: p.Bool(true),                  //we're defaulting to true, as the API currently only supports the creation of non-mail enabled security groups.
+		SecurityEnabled: p.Bool(true),            //we're defaulting to true, as the API currently only supports the creation of non-mail enabled security groups.
 	}
 
+	// todo require resources to be imported
 	group, err := client.Create(ctx, properties)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating group %q", name)
+	}
+	if group.ObjectID == nil {
+		return fmt.Errorf("objectID is nil for group %q", name)
 	}
 
-	d.SetId(*group.ObjectID)
+	// we have to make a request for each owner we want to add to the group
+	for _, owner := range tf.ExpandStringArray(d.Get("owners").(*schema.Set).List()) {
+		add := graphrbac.AddOwnerParameters{
+			URL: p.String(fmt.Sprintf("https://graph.windows.net/%s/directoryObjects/%s", tenantID, owner)),
+		}
 
-	owners := d.Get("owners").([]interface{})
-	ownersExpanded, err := expandGroupOwners(owners)
-	if err != nil {
-		return fmt.Errorf("Error expanding `owners`: %+v", owners)
-	}
-
-	if ownersExpanded != nil {
-		//we have to make a request for each owner we want to add to the group
-		for _, owner := range *ownersExpanded {
-			ownerGraphURL := fmt.Sprintf("https://graph.windows.net/%s/directoryObjects/%s", tenantID, owner)
-			addOwnerProperties := graphrbac.AddOwnerParameters{
-				URL: &ownerGraphURL,
-			}
-
-			if _, err := client.AddOwner(ctx, *group.ObjectID, addOwnerProperties); err != nil {
-				return err
-			}
+		if _, err := client.AddOwner(ctx, *group.ObjectID, add); err != nil {
+			return fmt.Errorf("erro adding owner %q to group %q", owner, name)
 		}
 	}
 
+	d.SetId(*group.ObjectID)
 	return resourceGroupRead(d, meta)
 }
 
 func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient).groupsClient
 	ctx := meta.(*ArmClient).StopContext
+	
 
 	resp, err := client.Get(ctx, d.Id())
 	if err != nil {
@@ -106,14 +106,15 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", resp.DisplayName)
 
 	respOwners, err := client.ListOwnersComplete(ctx, d.Id())
-	if err == nil {
-		ownersFlat, err := flattenGroupOwners(meta, respOwners)
-		if err != nil {
-			return fmt.Errorf("Error flattening `owners` for Azure AD group %q: %+v", *resp.DisplayName, err)
-		}
-		d.Set("owners", ownersFlat)
+	if err != nil {
+		return fmt.Errorf("Error retrieving owners for Azure AD Group %q (ID %q): %+v", name, d.Id(), err)
 	}
 
+	ownersFlat, err := flattenGroupOwners(meta, respOwners)
+	if err != nil {
+		return fmt.Errorf("Error flattening `owners` for Azure AD group %q: %+v", *resp.DisplayName, err)
+	}
+	d.Set("owners", ownersFlat)
 	return nil
 }
 

@@ -50,6 +50,7 @@ func resourceApplication() *schema.Resource {
 
 			"reply_urls": {
 				Type:     schema.TypeSet,
+				Set: schema.HashString,
 				Optional: true,
 				Computed: true,
 				Elem: &schema.Schema{
@@ -216,13 +217,13 @@ func resourceApplicationCreate(d *schema.ResourceData, meta interface{}) error {
 		properties.AdditionalProperties["groupMembershipClaims"] = v
 	}
 
+	// todo require resources to be imported
 	app, err := client.Create(ctx, properties)
 	if err != nil {
 		return err
 	}
-
 	if app.ObjectID == nil {
-		return fmt.Errorf("Application objectId is nil")
+		return fmt.Errorf("objectID is nil for Application %q", name)
 	}
 
 	// follow suggested hack for azure-cli

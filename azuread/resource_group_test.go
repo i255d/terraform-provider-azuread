@@ -11,6 +11,7 @@ import (
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/ar"
 )
 
+//todo with SP/group/ application?
 func TestAccAzureADGroup_basic(t *testing.T) {
 	resourceName := "azuread_group.test"
 	id, err := uuid.GenerateUUID()
@@ -168,6 +169,7 @@ resource "azuread_group" "test" {
 }
 `, id, password)
 }
+
 
 func testAccAzureADGroupWithMultipleOwners(id string, password string) string {
 	return fmt.Sprintf(`
