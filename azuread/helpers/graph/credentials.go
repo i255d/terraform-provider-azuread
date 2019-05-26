@@ -2,7 +2,6 @@ package graph
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
@@ -68,37 +67,31 @@ func PasswordResourceSchema(object_type string) map[string]*schema.Schema {
 }
 
 type PasswordCredentialId struct {
+	objectSubResourceId
 	ObjectId string
 	KeyId    string
 }
 
-func (id PasswordCredentialId) String() string {
-	return id.ObjectId + "/" + id.KeyId
-}
-
-func ParsePasswordCredentialId(id string) (PasswordCredentialId, error) {
-	parts := strings.Split(id, "/")
-	if len(parts) != 2 {
-		return PasswordCredentialId{}, fmt.Errorf("Password Credential ID should be in the format {objectId}/{keyId} - but got %q", id)
-	}
-
-	if _, err := uuid.ParseUUID(parts[0]); err != nil {
-		return PasswordCredentialId{}, fmt.Errorf("Object ID isn't a valid UUID (%q): %+v", id[0], err)
-	}
-
-	if _, err := uuid.ParseUUID(parts[1]); err != nil {
-		return PasswordCredentialId{}, fmt.Errorf("Object ID isn't a valid UUID (%q): %+v", id[1], err)
+func ParsePasswordCredentialId(input string) (PasswordCredentialId, error) {
+	id, err := objectSubResourceIdParse(input)
+	if err != nil {
+		return PasswordCredentialId{}, fmt.Errorf("Password Credential ID invalid: %v", err)
 	}
 
 	return PasswordCredentialId{
-		ObjectId: parts[0],
-		KeyId:    parts[1],
+		objectSubResourceId: id,
+		ObjectId:            id.guid1,
+		KeyId:               id.guid1,
 	}, nil
 
 }
 
 func PasswordCredentialIdFrom(objectId, keyId string) PasswordCredentialId {
 	return PasswordCredentialId{
+		objectSubResourceId: objectSubResourceId{
+			guid1: objectId,
+			guid2: keyId,
+		},
 		ObjectId: objectId,
 		KeyId:    keyId,
 	}

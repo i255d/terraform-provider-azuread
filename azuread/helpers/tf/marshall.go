@@ -8,7 +8,6 @@ func ExpandStringSlice(input []interface{}) []string {
 	return result
 }
 
-
 func ExpandStringSlicePtr(input []interface{}) *[]string {
 	r := ExpandStringSlice(input)
 	return &r

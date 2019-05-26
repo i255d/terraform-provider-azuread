@@ -5,13 +5,12 @@ import (
 	"log"
 
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/ar"
-	`github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/guid`
+	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/guid"
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/p"
-	`github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/tf`
+	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azuread/azuread/helpers/validate"
 )
 
@@ -59,9 +58,9 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	// first create group
 	properties := graphrbac.GroupCreateParameters{
 		DisplayName:     &name,
-		MailEnabled:     p.Bool(false),           // we're defaulting to false, as the API currently only supports the creation of non-mail enabled security groups.
+		MailEnabled:     p.Bool(false),                 // we're defaulting to false, as the API currently only supports the creation of non-mail enabled security groups.
 		MailNickname:    p.String(guid.New().String()), // this matches the portal behavior
-		SecurityEnabled: p.Bool(true),            // we're defaulting to true, as the API currently only supports the creation of non-mail enabled security groups.
+		SecurityEnabled: p.Bool(true),                  // we're defaulting to true, as the API currently only supports the creation of non-mail enabled security groups.
 	}
 
 	// todo require resources to be imported
@@ -74,7 +73,7 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// we have to make a request for each owner we want to add to the group
-	for _, owner := range tf.ExpandStringArray(d.Get("owners").(*schema.Set).List()) {
+	for _, owner := range tf.ExpandStringSlice(d.Get("owners").(*schema.Set).List()) {
 		add := graphrbac.AddOwnerParameters{
 			URL: p.String(fmt.Sprintf("https://graph.windows.net/%s/directoryObjects/%s", tenantID, owner)),
 		}
@@ -91,7 +90,6 @@ func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient).groupsClient
 	ctx := meta.(*ArmClient).StopContext
-	
 
 	resp, err := client.Get(ctx, d.Id())
 	if err != nil {
@@ -108,7 +106,7 @@ func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 
 	respOwners, err := client.ListOwnersComplete(ctx, d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving owners for Azure AD Group %q (ID %q): %+v", name, d.Id(), err)
+		return fmt.Errorf("Error retrieving owners for Azure AD Group ID %q: %+v", d.Id(), err)
 	}
 
 	ownersFlat, err := flattenGroupOwners(meta, respOwners)

@@ -52,7 +52,7 @@ func resourceApplication() *schema.Resource {
 
 			"reply_urls": {
 				Type:     schema.TypeSet,
-				Set: schema.HashString,
+				Set:      schema.HashString,
 				Optional: true,
 				Computed: true,
 				Elem: &schema.Schema{

@@ -170,7 +170,6 @@ resource "azuread_group" "test" {
 `, id, password)
 }
 
-
 func testAccAzureADGroupWithMultipleOwners(id string, password string) string {
 	return fmt.Sprintf(`
 
