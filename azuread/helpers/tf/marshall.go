@@ -1,6 +1,6 @@
 package tf
 
-func ExpandStringArray(input []interface{}) []string {
+func ExpandStringSlice(input []interface{}) []string {
 	result := make([]string, 0)
 	for _, item := range input {
 		result = append(result, item.(string))
@@ -8,12 +8,13 @@ func ExpandStringArray(input []interface{}) []string {
 	return result
 }
 
-func ExpandStringArrayPtr(input []interface{}) *[]string {
-	r := ExpandStringArray(input)
+
+func ExpandStringSlicePtr(input []interface{}) *[]string {
+	r := ExpandStringSlice(input)
 	return &r
 }
 
-func FlattenStringArrayPtr(input *[]string) []interface{} {
+func FlattenStringSlicePtr(input *[]string) []interface{} {
 	result := make([]interface{}, 0)
 	if input != nil {
 		for _, item := range *input {
