@@ -66,7 +66,7 @@ if ($role -eq $null) {
 Next we need the Client ID (sometimes referred to as the Application ID) of the Service Principal. We can look this up by it's display name:
 
 ```shell
-$sp = Get-AzureADServicePrincipal | Where-Object {$_.displayName -eq 'Service Principal Name'}
+$sp = Get-AzureADServicePrincipal -All:$true | Where-Object {$_.displayName -eq 'Service Principal Name'}
 $sp.ObjectId
 ```
 
@@ -92,7 +92,7 @@ if ($role -eq $null) {
     $role = Get-AzureADDirectoryRole | Where-Object {$_.displayName -eq 'Company Administrator'}
 }
 
-$sp = Get-AzureADServicePrincipal | Where-Object {$_.displayName -eq 'Service Pricipal Name'}
+$sp = Get-AzureADServicePrincipal -All:$true | Where-Object {$_.displayName -eq 'Service Pricipal Name'}
 $sp.ObjectId
 
 Add-AzureADDirectoryRoleMember -ObjectId $role.ObjectId -RefObjectId $sp.ObjectId
